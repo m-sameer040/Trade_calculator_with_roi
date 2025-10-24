@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trade Tools — ROI Calculators</title>
+
+  <!-- Tailwind CDN (used for layout + quick styles) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ---------- Ambient glow animation (same theme as your first file) ---------- */
+    @keyframes glow {
+      0% {
+        box-shadow: 0 0 30px #00ffff, 0 0 60px rgba(0, 255, 255, 0.05);
+        border-color: #00FFFF;
+      }
+
+      25% {
+        box-shadow: 0 0 30px #ff00ff, 0 0 60px rgba(255, 0, 255, 0.05);
+        border-color: #FF00FF;
+      }
+
+      50% {
+        box-shadow: 0 0 30px #00ff00, 0 0 60px rgba(0, 255, 0, 0.05);
+        border-color: #00FF00;
+      }
+
+      75% {
+        box-shadow: 0 0 30px #ffa500, 0 0 60px rgba(255, 165, 0, 0.05);
+        border-color: #FFA500;
+      }
+
+      100% {
+        box-shadow: 0 0 30px #ff5555, 0 0 60px rgba(255, 85, 85, 0.05);
+        border-color: #FF5555;
+      }
+    }
+
+    :root {
+      --bg: #0f0f10;
+      --panel-start: rgba(30, 30, 30, 0.95);
+      --panel-end: rgba(24, 24, 24, 0.95);
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: #e6eef6;
+    }
+
+    body {
+      display: flex;
+      align-items: flex-start;
+      /* instead of center */
+      justify-content: center;
+      padding: 32px 24px;
+      /* top padding increased */
+      min-height: 100vh;
+    }
+
+
+
+    .ambient-border {
+      border: 6px solid #00FFFF;
+      border-radius: 18px;
+      animation: glow 2s linear infinite;
+      background-color: rgba(15, 15, 15, 0.4);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel-start), var(--panel-end));
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 8px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Header / toggles */
+    .topbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toggles {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 999px;
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      color: #cfeff6;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .toggle-btn.active {
+      background: linear-gradient(90deg, rgba(0, 255, 255, 0.08), rgba(0, 200, 200, 0.03));
+      color: #00ffff;
+      box-shadow: 0 6px 20px rgba(0, 255, 255, 0.06);
+      transform: translateY(-2px);
+    }
+
+    /* shared form input styles */
+    label {
+      font-size: 13px;
+      color: #9aa4b2;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      background: var(--glass);
+      color: inherit;
+      font-size: 14px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.09);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 820px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      border: none;
+    }
+
+    .btn.primary {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #9aa4b2;
+    }
+
+    .btn.warn {
+      background: #f97316;
+      color: white;
+    }
+
+    .results-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width:720px) {
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tile {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .note {
+      margin-top: 10px;
+      color: #9aa4b2;
+      font-size: 13px;
+    }
+
+    /* hide/show sections */
+    .section {
+      display: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 220ms ease;
+    }
+
+    .section.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* small footer link */
+    .small-link {
+      color: #7fe7ff;
+      text-decoration: none;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ambient-border p-6">
+    <div class="panel p-6 md:p-10">
+      <div class="topbar">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-cyan-400">Trade Toolkit</h1>
+          <p class="text-sm text-gray-400 mt-1">Two calculators — ROI & Profit (classic) and ⚠️ High Risky Trade (ROI →
+            Price).</p>
+        </div>
+
+        <div class="toggles" role="tablist" aria-label="Calculator switch">
+          <button id="btn-main" class="toggle-btn active" role="tab" aria-selected="true">ROI & Profit
+            (Classic)</button>
+          <button id="btn-risky" class="toggle-btn" role="tab" aria-selected="false">⚠️ High Risky Trade</button>
+        </div>
+      </div>
+
+      <!-- ===========================
+           SECTION A: Original ROI & Profit Calculator
+           (adapted from your first file; IDs prefixed with main-)
+           =========================== -->
+      <section id="section-main" class="section active" aria-hidden="false">
+        <div class="mb-4">
+          <h2 class="text-xl font-bold text-cyan-300">💹 Trade ROI & Profit Calculator</h2>
+          <p class="text-sm text-gray-400">Enter trade params and press Enter or Calculate.</p>
+        </div>
+
+        <form id="mainForm" class="grid-2" onsubmit="return false;">
+          <div>
+            <label>Entry Price</label>
+            <input id="main-entry" title="entry" inputmode="decimal" type="text" placeholder="e.g. 100" />
+          </div>
+
+          <div>
+            <label>Target Price</label>
+            <input id="main-target" title="target" inputmode="decimal" type="text" placeholder="e.g. 120" />
+          </div>
+
+          <div>
+            <label>Stop Loss</label>
+            <input id="main-stop" title="stop" inputmode="decimal" type="text" placeholder="e.g. 95" />
+          </div>
+
+          <div>
+            <label>Leverage (x)</label>
+            <input id="main-leverage" title="leverage" inputmode="decimal" type="text" placeholder="e.g. 10" />
+          </div>
+
+          <div>
+            <label>Margin ($)</label>
+            <input id="main-margin" title="margin" inputmode="decimal" type="text" placeholder="e.g. 50" />
+          </div>
+
+          <div>
+            <label>Position Type</label>
+            <select id="main-position" title="select">
+              <option>Long</option>
+              <option>Short</option>
+            </select>
+          </div>
+
+          <div class="actions mt-3">
+            <button id="main-calc" class="btn primary" type="button">Calculate</button>
+            <button id="main-clear" class="btn ghost" type="button">Reset</button>
+            <button id="main-copy" class="btn ghost" type="button">Copy results</button>
+          </div>
+        </form>
+
+        <section class="results-grid mt-4" id="main-results" aria-hidden="true">
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">ROI (%)</h3>
+            <p id="main-out_roi" class="text-lg font-bold text-cyan-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Profit ($)</h3>
+            <p id="main-out_profit" class="text-lg font-bold text-green-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Loss ($)</h3>
+            <p id="main-out_loss" class="text-lg font-bold text-red-500">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Price Move (%)</h3>
+            <p id="main-out_move" class="text-lg font-bold text-yellow-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Stop Loss ROI (%)</h3>
+            <p id="main-out_slroi" class="text-lg font-bold text-red-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Position</h3>
+            <p id="main-out_pos" class="text-lg font-bold text-gray-300">—</p>
+          </div>
+        </section>
+
+        <div class="note">Tip: Use ↑ ↓ to move between fields. Press Enter to calculate.</div>
+      </section>
+
+      <!-- ===========================
+           SECTION B: High Risky Trade (ROI → Price)
+           (adapted from your second file; IDs prefixed with risky-)
+           =========================== -->
+      <section id="section-risky" class="section" aria-hidden="true">
+        <div class="mb-4">
+          <h2 class="text-xl font-bold text-cyan-300">⚠️ High Risky Trade Calculator (ROI → Price)</h2>
+          <p class="text-sm text-gray-400">Tum ROI (%) enter karo. Calculator TP/SL price, profit/loss ($), RR aur
+            liquidation calculate kar dega. (Long/Short dono)</p>
+        </div>
+        <div class="toggles mb-4">
+          <button id="btn-main-2" class="toggle-btn">ROI & Profit (Classic)</button>
+          <button id="btn-risky-2" class="toggle-btn active">⚠️ High Risky Trade</button>
+        </div>
+
+
+        <div class="grid-2">
+          <div>
+            <label>Entry Price</label>
+            <input id="risky-entry" type="number" step="any" placeholder="e.g. 100" />
+          </div>
+
+          <div>
+            <label>Leverage (x)</label>
+            <input id="risky-leverage" type="number" step="any" placeholder="e.g. 10" />
+          </div>
+
+          <div>
+            <label>Margin ($)</label>
+            <input id="risky-margin" type="number" step="any" placeholder="e.g. 50" />
+          </div>
+
+          <div>
+            <label>Position</label>
+            <select id="risky-position" title="position">
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Take Profit ROI (%)</label>
+            <input id="risky-tp_roi" type="number" step="any" placeholder="e.g. 290" />
+          </div>
+
+          <div>
+            <label>Stop Loss ROI (%)</label>
+            <input id="risky-sl_roi" type="number" step="any" placeholder="e.g. -300" />
+          </div>
+        </div>
+
+        <div class="actions mt-3">
+          <button id="risky-calc" class="btn primary">Calculate</button>
+          <button id="risky-reset" class="btn ghost" type="button">Reset</button>
+          <button id="risky-copy" class="btn ghost" type="button">Copy results</button>
+        </div>
+
+        <section class="results-grid" id="risky-results" aria-hidden="true">
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Target Price</h3>
+            <p id="risky-out_target" class="text-lg font-bold text-cyan-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Stop Loss Price</h3>
+            <p id="risky-out_stop" class="text-lg font-bold text-red-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Profit ($)</h3>
+            <p id="risky-out_profit" class="text-lg font-bold text-green-400">—</p>
+          </div>
+
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Loss ($)</h3>
+            <p id="risky-out_loss" class="text-lg font-bold text-red-500">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Risk–Reward</h3>
+            <p id="risky-out_rr" class="text-lg font-bold text-yellow-400">—</p>
+          </div>
+          <div class="tile">
+            <h3 class="text-gray-400 text-sm">Liquidation (approx.)</h3>
+            <p id="risky-out_liq" class="text-lg font-bold text-gray-300">—</p>
+          </div>
+        </section>
+
+        <p class="note">Formula summary: Price move (%) = ROI / Leverage. Target/SL price = Entry × (1 ± PriceMove/100)
+          depending on Long/Short. Profit $ = Margin × (TP_ROI/100). Loss $ = Margin × (SL_ROI/100).</p>
+      </section>
+
+      <div class="mt-6 text-center text-xs text-gray-400">Built for Sameer — single file. Use the toggle above to switch
+        calculators.</div>
+    </div>
+  </div>
+
+  <!-- ===========================
+       JavaScript: toggles + both calculators
+       =========================== -->
+  <script>
+    // Helper
+    const $ = id => document.getElementById(id);
+
+    /* -----------------------
+       Toggle logic
+       ----------------------- */
+    const btnMain = $('btn-main');
+    const btnRisky = $('btn-risky');
+    const sectionMain = $('section-main');
+    const sectionRisky = $('section-risky');
+
+    function showMain() {
+      btnMain.classList.add('active');
+      btnRisky.classList.remove('active');
+      btnMain.setAttribute('aria-selected', 'true');
+      btnRisky.setAttribute('aria-selected', 'false');
+
+      sectionMain.classList.add('active');
+      sectionMain.setAttribute('aria-hidden', 'false');
+      sectionRisky.classList.remove('active');
+      sectionRisky.setAttribute('aria-hidden', 'true');
+
+      // focus first field of main
+      setTimeout(() => $('main-entry').focus(), 120);
+    }
+
+    function showRisky() {
+      btnRisky.classList.add('active');
+      btnMain.classList.remove('active');
+      btnRisky.setAttribute('aria-selected', 'true');
+      btnMain.setAttribute('aria-selected', 'false');
+
+      sectionRisky.classList.add('active');
+      sectionRisky.setAttribute('aria-hidden', 'false');
+      sectionMain.classList.remove('active');
+      sectionMain.setAttribute('aria-hidden', 'true');
+
+      setTimeout(() => $('risky-entry').focus(), 120);
+    }
+
+    btnMain.addEventListener('click', showMain);
+    btnRisky.addEventListener('click', showRisky);
+
+    // Keyboard: left/right arrows to switch
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') showMain();
+      if (e.key === 'ArrowRight') showRisky();
+    });
+
+    /* -----------------------
+       MAIN calculator (original)
+       IDs: main-entry, main-target, main-stop, main-leverage, main-margin, main-position
+       ----------------------- */
+    const mainFields = ['main-entry', 'main-target', 'main-stop', 'main-leverage', 'main-margin', 'main-position'].map(id => $(id));
+    const mainCalcBtn = $('main-calc');
+    const mainClearBtn = $('main-clear');
+    const mainResultBox = $('main-result');
+
+    function mainToNumber(v) {
+      if (v === null || v === undefined) return NaN;
+      return Number(String(v).replace(/,/g, '').trim());
+    }
+
+    function mainFormatMoney(n) {
+      return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function mainCalculate() {
+      const entry = mainToNumber($('main-entry').value);
+      const target = mainToNumber($('main-target').value);
+      const stop_loss = mainToNumber($('main-stop').value);
+      const leverage = mainToNumber($('main-leverage').value);
+      const margin = mainToNumber($('main-margin').value);
+      const position = $('main-position').value.toLowerCase();
+
+      if (![entry, target, stop_loss, leverage, margin].every(v => !isNaN(v))) {
+        mainResultBox.innerText = 'Please enter valid numeric values in all fields.';
+        return;
+      }
+      if (!['long', 'short'].includes(position)) {
+        mainResultBox.innerText = "Position must be 'Long' or 'Short'.";
+        return;
+      }
+
+      let price_move, roi, profit_in_dollars, stop_move, roi_on_stop, loss_in_dollars;
+
+      if (position === 'long') {
+        price_move = ((target - entry) / entry) * 100;
+        roi = price_move * leverage;
+        profit_in_dollars = (roi / 100) * margin;
+
+        stop_move = ((stop_loss - entry) / entry) * 100;
+        roi_on_stop = stop_move * leverage;
+        loss_in_dollars = Math.abs((roi_on_stop / 100) * margin);
+      } else {
+        price_move = ((entry - target) / entry) * 100;
+        roi = price_move * leverage;
+        profit_in_dollars = (roi / 100) * margin;
+
+        stop_move = ((entry - stop_loss) / entry) * 100;
+        roi_on_stop = stop_move * leverage;
+        loss_in_dollars = Math.abs((roi_on_stop / 100) * margin);
+      }
+
+      const roiSign = roi >= 0 ? '📈' : '📉';
+      const profitSign = roi >= 0 ? '🟢' : '🔴';
+
+      $('main-out_roi').textContent = roi.toFixed(2);
+      $('main-out_profit').textContent = mainFormatMoney(profit_in_dollars);
+      $('main-out_loss').textContent = '-' + mainFormatMoney(loss_in_dollars);
+      $('main-out_move').textContent = price_move.toFixed(2);
+      $('main-out_slroi').textContent = roi_on_stop.toFixed(2);
+      $('main-out_pos').textContent = position.toUpperCase();
+
+      // show grid (for accessibility)
+      $('main-results').setAttribute('aria-hidden', 'false');
+
+    }
+
+    mainCalcBtn.addEventListener('click', mainCalculate);
+    mainClearBtn.addEventListener('click', () => {
+      mainFields.forEach(f => { if (f.tagName === 'SELECT') f.selectedIndex = 0; else f.value = ''; });
+      ['main-out_roi', 'main-out_profit', 'main-out_loss', 'main-out_move', 'main-out_slroi', 'main-out_pos']
+        .forEach(id => $(id).textContent = '—');
+      $('main-results').setAttribute('aria-hidden', 'true');
+
+      mainFields[0].focus();
+    });
+
+
+    // keyboard nav for main fields and Enter to calculate
+    mainFields.forEach((el, idx) => {
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'ArrowDown') {
+          ev.preventDefault();
+          const next = mainFields[(idx + 1) % mainFields.length];
+          next.focus();
+        } else if (ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          const prev = mainFields[(idx - 1 + mainFields.length) % mainFields.length];
+          prev.focus();
+        } else if (ev.key === 'Enter') {
+          ev.preventDefault();
+          mainCalculate();
+        }
+      });
+    });
+
+    // focus first field on load
+    window.addEventListener('load', () => $('main-entry').focus());
+
+    /* -----------------------
+       RISKY calculator (ROI → Price)
+       IDs: risky-entry, risky-leverage, risky-margin, risky-position, risky-tp_roi, risky-sl_roi
+       ----------------------- */
+    function riskyFmt(v) { if (v === null || v === undefined || isNaN(v)) return '—'; return Number(v).toLocaleString(undefined, { maximumFractionDigits: 8 }); }
+
+    function riskyCalculate() {
+      const entry = parseFloat($('risky-entry').value);
+      const leverage = parseFloat($('risky-leverage').value);
+      const margin = parseFloat($('risky-margin').value);
+      const tp_roi = parseFloat($('risky-tp_roi').value);
+      const sl_roi = parseFloat($('risky-sl_roi').value);
+      const position = $('risky-position').value;
+
+      if ([entry, leverage, margin, tp_roi, sl_roi].some(v => isNaN(v))) {
+        alert('Please fill all fields with numeric values.');
+        return;
+      }
+
+      const tp_move_pct = tp_roi / leverage;
+      const sl_move_pct = sl_roi / leverage;
+
+      let target_price, stop_price;
+      if (position === 'Long') {
+        target_price = entry * (1 + (tp_move_pct / 100));
+        stop_price = entry * (1 + (sl_move_pct / 100));
+      } else {
+        target_price = entry * (1 - (tp_move_pct / 100));
+        stop_price = entry * (1 - (sl_move_pct / 100));
+      }
+
+      const profit_dollars = margin * (tp_roi / 100);
+      const loss_dollars = margin * (sl_roi / 100);
+      const rr = Math.abs(tp_roi) / Math.abs(sl_roi || 1e-12);
+      const liq = position === 'Long' ? entry * (1 - 1 / leverage) : entry * (1 + 1 / leverage);
+
+      $('risky-out_target').textContent = riskyFmt(target_price);
+      $('risky-out_stop').textContent = riskyFmt(stop_price);
+      $('risky-out_profit').textContent = (profit_dollars >= 0 ? '+' : '') + riskyFmt(profit_dollars);
+      $('risky-out_loss').textContent = (loss_dollars >= 0 ? '+' : '') + riskyFmt(loss_dollars);
+      $('risky-out_rr').textContent = riskyFmt(rr);
+      $('risky-out_liq').textContent = riskyFmt(liq);
+
+      // reveal results area for screen readers
+      $('risky-results').setAttribute('aria-hidden', 'false');
+    }
+
+    $('risky-calc').addEventListener('click', riskyCalculate);
+    $('risky-reset').addEventListener('click', () => {
+      ['risky-entry', 'risky-leverage', 'risky-margin', 'risky-tp_roi', 'risky-sl_roi'].forEach(id => $(id).value = '');
+      ['risky-out_target', 'risky-out_stop', 'risky-out_profit', 'risky-out_loss', 'risky-out_rr', 'risky-out_liq'].forEach(id => $(id).textContent = '—');
+      $('risky-entry').focus();
+    });
+
+    $('risky-copy').addEventListener('click', () => {
+      const text = [
+        'Entry: ' + $('risky-entry').value,
+        'Leverage: ' + $('risky-leverage').value,
+        'Margin: ' + $('risky-margin').value,
+        'TP ROI: ' + $('risky-tp_roi').value,
+        'SL ROI: ' + $('risky-sl_roi').value,
+        'Position: ' + $('risky-position').value,
+        '\nResults:',
+        'Target: ' + $('risky-out_target').textContent,
+        'Stop: ' + $('risky-out_stop').textContent,
+        'Profit$: ' + $('risky-out_profit').textContent,
+        'Loss$: ' + $('risky-out_loss').textContent,
+        'RR: ' + $('risky-out_rr').textContent,
+        'Liquidation: ' + $('risky-out_liq').textContent
+      ].join('\n');
+      navigator.clipboard?.writeText(text).then(() => alert('Results copied to clipboard ✅'));
+    });
+
+    // allow Enter to calculate when in risky inputs
+    ['risky-entry', 'risky-leverage', 'risky-margin', 'risky-tp_roi', 'risky-sl_roi', 'risky-position'].forEach((id) => {
+      const el = $(id);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          riskyCalculate();
+        }
+      });
+    });
+    // -----------------------
+    // CLASSIC COPY BUTTON (same as risky copy style)
+    // -----------------------
+    $('main-copy').addEventListener('click', () => {
+      const text = [
+        'Entry Price: ' + $('main-entry').value,
+        'Target Price: ' + $('main-target').value,
+        'Stop Loss: ' + $('main-stop').value,
+        'Leverage: ' + $('main-leverage').value,
+        'Margin: ' + $('main-margin').value,
+        'Position: ' + $('main-position').value,
+        '\nResults:',
+        'ROI (%): ' + $('main-out_roi').textContent,
+        'Profit ($): ' + $('main-out_profit').textContent,
+        'Loss ($): ' + $('main-out_loss').textContent,
+        'Price Move (%): ' + $('main-out_move').textContent,
+        'Stop Loss ROI (%): ' + $('main-out_slroi').textContent,
+        'Position: ' + $('main-out_pos').textContent
+      ].join('\n');
+
+      navigator.clipboard?.writeText(text).then(() => alert('Results copied to clipboard ✅'));
+    });
+
+    // -----------------------
+    // SECOND toggle buttons on risky section (duplicate control)
+    // -----------------------
+    $('btn-main-2').addEventListener('click', showMain);
+    $('btn-risky-2').addEventListener('click', showRisky);
+
+  </script>
+</body>
+
+</html>
